@@ -123,45 +123,83 @@ footer {
 }
 
 
-/* 📱 Mobile-friendly Flex Layout */
+/* === FLEX LAYOUT FOR CHARTS === */
 
 .charts-flex {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
     gap: 20px;
+    margin-top: 40px;
 }
 
 .chart-box {
     background: #1e293b;
     padding: 20px;
-    border-radius: 10px;
+    border-radius: 12px;
     box-shadow: 0 0 10px rgba(148, 163, 184, 0.2);
     width: 100%;
-    max-width: 320px;
+    max-width: 300px;
+    box-sizing: border-box;
+    margin: 10px;
+    text-align: center;
+}
+
+canvas {
+    max-width: 100%;
+    height: auto !important;
+    display: block;
+    margin: auto;
+}
+
+
+/* === RESPONSIVE FORM === */
+
+form {
+    max-width: 600px;
+    margin: 20px auto;
+    padding: 25px;
+    border-radius: 12px;
+    background: #1e293b;
+    box-shadow: 0 0 10px rgba(148, 163, 184, 0.2);
     box-sizing: border-box;
 }
 
+input,
+select {
+    width: 100%;
+    padding: 10px;
+    margin-top: 5px;
+    border-radius: 6px;
+    border: none;
+    background: #334155;
+    color: #f1f5f9;
+}
 
-/* Make all canvas elements scale within their container */
-
-canvas {
-    max-width: 100% !important;
-    height: auto !important;
+button {
+    width: 100%;
+    padding: 12px;
+    background: #38bdf8;
+    color: #000;
+    font-weight: bold;
+    border: none;
+    border-radius: 6px;
+    margin-top: 15px;
+    cursor: pointer;
 }
 
 
-/* 🧠 Responsive Text Size */
+/* === SMALL SCREEN FIX === */
 
-body {
-    font-size: 16px;
-}
-
-@media (max-width: 480px) {
-    body {
-        font-size: 14px;
+@media screen and (max-width: 768px) {
+    .charts-flex {
+        flex-direction: column;
+        align-items: center;
     }
-    .chart-box h3 {
-        font-size: 1rem;
+    .chart-box {
+        max-width: 90%;
+    }
+    form {
+        width: 90%;
     }
 }
