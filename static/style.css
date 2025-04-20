@@ -108,10 +108,11 @@ footer {
     border-radius: 12px;
     box-shadow: 0 0 10px rgba(148, 163, 184, 0.2);
     width: 100%;
-    max-width: 100%;
+    max-width: 300px;
     box-sizing: border-box;
     margin: 10px auto;
     text-align: center;
+    margin-bottom: 20px;
 }
 
 canvas {
