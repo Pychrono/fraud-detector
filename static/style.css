@@ -18,15 +18,6 @@ h2 {
     margin-bottom: 11px;
 }
 
-form {
-    background: #1e293b;
-    padding: 30px;
-    border-radius: 12px;
-    max-width: 600px;
-    margin: 20px auto;
-    box-shadow: 0 0 15px rgba(56, 189, 248, 0.2);
-}
-
 label {
     display: block;
     margin: 20px 0 5px;
@@ -79,21 +70,10 @@ footer {
 
 .charts-flex {
     display: flex;
-    justify-content: center;
-    gap: 40px;
     flex-wrap: wrap;
-    margin-top: 50px;
-}
-
-.chart-box {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    background: #1e293b;
-    padding: 20px;
-    border-radius: 12px;
-    box-shadow: 0 0 10px rgba(148, 163, 184, 0.2);
-    width: 280px;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 40px;
 }
 
 .chart-box h3 {
@@ -122,26 +102,15 @@ footer {
     align-items: center;
 }
 
-
-/* === FLEX LAYOUT FOR CHARTS === */
-
-.charts-flex {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 20px;
-    margin-top: 40px;
-}
-
 .chart-box {
     background: #1e293b;
     padding: 20px;
     border-radius: 12px;
     box-shadow: 0 0 10px rgba(148, 163, 184, 0.2);
     width: 100%;
-    max-width: 300px;
+    max-width: 100%;
     box-sizing: border-box;
-    margin: 10px;
+    margin: 10px auto;
     text-align: center;
 }
 
@@ -150,6 +119,12 @@ canvas {
     height: auto !important;
     display: block;
     margin: auto;
+}
+
+body {
+    max-width: 100vw;
+    overflow-x: hidden;
+    padding-bottom: 40px;
 }
 
 
