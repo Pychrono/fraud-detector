@@ -121,3 +121,47 @@ footer {
     flex-direction: column;
     align-items: center;
 }
+
+
+/* 📱 Mobile-friendly Flex Layout */
+
+.charts-flex {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 20px;
+}
+
+.chart-box {
+    background: #1e293b;
+    padding: 20px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(148, 163, 184, 0.2);
+    width: 100%;
+    max-width: 320px;
+    box-sizing: border-box;
+}
+
+
+/* Make all canvas elements scale within their container */
+
+canvas {
+    max-width: 100% !important;
+    height: auto !important;
+}
+
+
+/* 🧠 Responsive Text Size */
+
+body {
+    font-size: 16px;
+}
+
+@media (max-width: 480px) {
+    body {
+        font-size: 14px;
+    }
+    .chart-box h3 {
+        font-size: 1rem;
+    }
+}
