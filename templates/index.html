@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Fraud Detection Tool</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+</head>
+
+<body>
+    <h1>💳 Real-Time Fraud Detection</h1>
+
+    <!-- ✅ Simple Form -->
+    <form id="simple-form">
+        <h2>Quick Check</h2>
+        <label>Amount (£)
+      <input type="range" name="amount" min="0" max="10000" step="50" value="500" oninput="amountOut.value = amount.value">
+      <output id="amountOut">500</output>
+    </label>
+
+        <label>Is Foreign?
+      <select name="is_foreign">
+        <option value="0">No</option>
+        <option value="1">Yes</option>
+      </select>
+    </label>
+
+        <label>High Risk Country?
+      <select name="is_high_risk_country">
+        <option value="0">No</option>
+        <option value="1">Yes</option>
+      </select>
+    </label>
+
+        <label>Used Chip?
+      <select name="used_chip">
+        <option value="1">Yes</option>
+        <option value="0">No</option>
+      </select>
+    </label>
+
+        <button type="submit">Check Fraud</button>
+        <div id="simple-result"></div>
+    </form>
+    <div class="charts-flex">
+        <div class="chart-box">
+            <h3>Prediction Summary</h3>
+            <div style="position: relative; width: 250px; height: 250px;">
+                <canvas id="fraudChart"></canvas>
+                <div id="fraudChartText" style="
+              position: absolute;
+              top: 50%;
+              left: 50%;
+              transform: translate(-50%, -50%);
+              color: #f1f5f9;
+              font-size: 1.5em;
+              font-weight: 600;
+            ">0%</div>
+            </div>
+        </div>
+
+        <div class="chart-box">
+            <h3>Transaction Amounts</h3>
+            <canvas id="amountChart" width="250" height="200"></canvas>
+        </div>
+
+        <div class="chart-box">
+            <h3>Risk Score Over Time</h3>
+            <canvas id="riskChart" width="250" height="200"></canvas>
+        </div>
+    </div>
+
+    <!-- Below this line if you want the grouped bar chart separate -->
+    <div class="compare-chart">
+        <h3>Amount vs Risk Comparison</h3>
+        <canvas id="compareChart" width="700" height="300"></canvas>
+    </div>
+
+
+    <!-- 🔄 Toggle for Dev Mode -->
+    <hr style="margin: 50px 0;">
+    <button onclick="toggleDevMode()">🔬 Try Advanced Mode</button>
+
+    <!-- 🧠 Advanced Mode -->
+    <div id="dev-mode" style="display:none;">
+        <form id="advanced-form">
+            <h2>Advanced Input (V1–V28 + Amount)</h2>
+            <button type="button" onclick="generateRandomInputs()">🎲 Generate Random Values</button>
+
+            <div id="advanced-fields" style="text-align:left; margin-top:20px;"></div>
+
+            <button type="submit">Run Advanced Prediction</button>
+            <div id="advanced-result"></div>
+        </form>
+    </div>
+
+    <!-- 👣 Footer -->
+    <footer>
+        Built by Nonso | <a href="https://your-portfolio-link.com" target="_blank">View Portfolio</a>
+    </footer>
+
+    <!-- ✅ JavaScript -->
+    <script>
+        // Toggle dev panel
+        function toggleDevMode() {
+            const dev = document.getElementById('dev-mode');
+            dev.style.display = dev.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // Generate V1–V28 and Amount fields dynamically
+        function generateRandomInputs() {
+            const container = document.getElementById('advanced-fields');
+            container.innerHTML = '';
+            for (let i = 1; i <= 28; i++) {
+                const name = `V${i}`;
+                container.innerHTML += `
+          <label>${name}
+            <input name="${name}" type="number" step="0.0001" value="${(Math.random() * 10 - 5).toFixed(4)}">
+          </label><br>
+        `;
+            }
+            container.innerHTML += `
+        <label>Amount
+          <input name="Amount" type="number" step="0.01" value="${(Math.random() * 10000).toFixed(2)}">
+        </label><br>
+      `;
+        }
+
+        // Handle simple prediction
+        document.getElementById('simple-form').addEventListener('submit', async(e) => {
+            e.preventDefault();
+            const form = new FormData(e.target);
+            const data = Object.fromEntries(form.entries());
+
+            for (let key in data) data[key] = parseFloat(data[key]);
+
+            const res = await fetch('/predict-simple', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await res.json();
+            if (res.ok) {
+                document.getElementById('simple-result').textContent = `Result: ${result.result.toUpperCase()}`;
+                // 🔥 Add this line right here:
+                updateChart(result.result, data.amount);
+            } else {
+                document.getElementById('simple-result').textContent = `Error: ${result.error}`;
+            }
+        });
+
+
+        // Handle advanced prediction
+        document.getElementById('advanced-form').addEventListener('submit', async(e) => {
+            e.preventDefault();
+            const form = new FormData(e.target);
+            const data = Object.fromEntries(form.entries());
+
+            // Convert to float
+            for (let key in data) data[key] = parseFloat(data[key]);
+
+            const res = await fetch('/predict', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await res.json();
+            document.getElementById('advanced-result').textContent =
+                res.ok ? `Prediction: ${result.result.toUpperCase()}` : `Error: ${result.error}`;
+        });
+
+        // Load advanced fields by default (optional)
+        generateRandomInputs();
+        let fraudCount = 0;
+        let safeCount = 0;
+
+        const ctx = document.getElementById('fraudChart').getContext('2d');
+        const fraudChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Not Fraud', 'Fraud'],
+                datasets: [{
+                    data: [0, 0],
+                    backgroundColor: ['#4ade80', '#f87171'],
+                    borderWidth: 0,
+                }]
+            },
+            options: {
+                responsive: true,
+                cutout: '70%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: '#f1f5f9',
+                            font: {
+                                size: 14
+                            }
+                        }
+                    },
+                    tooltip: {
+                        enabled: true,
+                        callbacks: {
+                            label: (context) => `${context.label}: ${context.raw}`
+                        }
+                    }
+                },
+                animation: {
+                    animateRotate: true,
+                    animateScale: true
+                }
+            }
+        });
+
+        const amountCtx = document.getElementById('amountChart').getContext('2d');
+        const amountChart = new Chart(amountCtx, {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Transaction Amount ($)',
+                    data: [],
+                    backgroundColor: [],
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#f1f5f9'
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            color: '#f1f5f9'
+                        }
+                    },
+                    y: {
+                        ticks: {
+                            color: '#f1f5f9'
+                        }
+                    }
+                }
+            }
+        });
+
+
+        const riskCtx = document.getElementById('riskChart').getContext('2d');
+        const riskChart = new Chart(riskCtx, {
+            type: 'line',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Fraud Risk (%)',
+                    data: [],
+                    fill: false,
+                    borderColor: '#fbbf24',
+                    tension: 0.4,
+                    pointBackgroundColor: '#fbbf24',
+                    pointRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#f1f5f9'
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: {
+                            color: '#f1f5f9'
+                        }
+                    },
+                    y: {
+                        min: 0,
+                        max: 100,
+                        ticks: {
+                            color: '#f1f5f9',
+                            stepSize: 20
+                        }
+                    }
+                }
+            }
+        });
+
+        const compareCtx = document.getElementById('compareChart').getContext('2d');
+        const compareChart = new Chart(compareCtx, {
+            type: 'bar',
+            data: {
+                labels: [],
+                datasets: [{
+                    label: 'Amount ($)',
+                    data: [],
+                    backgroundColor: '#38bdf8'
+                }, {
+                    label: 'Risk (%)',
+                    data: [],
+                    backgroundColor: '#fbbf24'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: {
+                        labels: {
+                            color: '#f1f5f9'
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        stacked: false,
+                        ticks: {
+                            color: '#f1f5f9'
+                        }
+                    },
+                    y: {
+                        stacked: false,
+                        ticks: {
+                            color: '#f1f5f9'
+                        }
+                    }
+                }
+            }
+        });
+
+
+
+        function updateChart(result, amount) {
+            // === Pie Chart Update ===
+            if (result === 'fraud') fraudCount++;
+            else safeCount++;
+
+            const total = fraudCount + safeCount;
+            const fraudPercent = Math.round((fraudCount / total) * 100);
+
+            fraudChart.data.datasets[0].data = [safeCount, fraudCount];
+            fraudChart.options.animation = {
+
+                duration: 800,
+                easing: 'easeInOutQuad',
+                animateRotate: true,
+                animateScale: true
+            };
+            fraudChart.update();
+
+
+            document.getElementById('fraudChartText').textContent = `${fraudPercent}% Fraud`;
+            document.getElementById('fraudChartText').style.color =
+                fraudPercent >= 50 ? '#f87171' : '#4ade80';
+
+            // === Bar Chart Update ===
+            const label = `#${amountChart.data.labels.length + 1}`;
+            const color = result === 'fraud' ? '#f87171' : '#4ade80';
+
+            amountChart.data.labels.push(label);
+            amountChart.data.datasets[0].data.push(amount);
+            amountChart.data.datasets[0].backgroundColor.push(color);
+            if (amountChart.data.labels.length > 10) {
+                amountChart.data.labels.shift();
+                amountChart.data.datasets[0].data.shift();
+                amountChart.data.datasets[0].backgroundColor.shift();
+            }
+            amountChart.update();
+
+            // === Simulated Risk Score ===
+            const simulatedRisk = result === 'fraud' ?
+                Math.floor(Math.random() * 30) + 70 // 70–99% risk
+                :
+                Math.floor(Math.random() * 50); // 0–49% risk
+
+            // === Line Chart Update ===
+            riskChart.data.labels.push(label);
+            riskChart.data.datasets[0].data.push(simulatedRisk);
+            if (riskChart.data.labels.length > 10) {
+                riskChart.data.labels.shift();
+                riskChart.data.datasets[0].data.shift();
+            }
+            riskChart.update();
+
+
+            // === Multi-bar Compare Chart Update ===
+            compareChart.data.labels.push(label);
+            compareChart.data.datasets[0].data.push(amount);
+            compareChart.data.datasets[1].data.push(simulatedRisk);
+            if (compareChart.data.labels.length > 10) {
+                compareChart.data.labels.shift();
+                compareChart.data.datasets[0].data.shift();
+                compareChart.data.datasets[1].data.shift();
+            }
+            compareChart.update();
+        }
+
+
+        // Modify simple form submission to update chart
+        document.getElementById('simple-form').addEventListener('submit', async(e) => {
+            e.preventDefault();
+            const form = new FormData(e.target);
+            const data = Object.fromEntries(form.entries());
+
+            for (let key in data) data[key] = parseFloat(data[key]);
+
+            const res = await fetch('/predict-simple', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            });
+
+            const result = await res.json();
+            if (res.ok) {
+                document.getElementById('simple-result').textContent = `Result: ${result.result.toUpperCase()}`;
+                updateChart(result.result, data.amount);
+            } else {
+                document.getElementById('simple-result').textContent = `Error: ${result.error}`;
+            }
+        });
+    </script>
+</body>
+
+</html>
+
+</html>
